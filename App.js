@@ -145,7 +145,7 @@ const App = () => {
                         <p>${gameState === 'START' ? 'Trafikte hayatta kal ve karşıya geç!' : `Skorun: ${score}. Tekrar dene?`}</p>
                         <button onClick=${startGame}>${gameState === 'START' ? 'BAŞLA' : 'TEKRAR DENE'}</button>
                         <div class="controls-hint">
-                            <span class="kbd">BOŞLUK</span> ile başlat, <span class="kbd">↑↓←→</span> ile oyna!
+                            <span class="kbd">BOŞLUK</span> veya <span class="kbd">DOKUN</span> ile başlat, <span class="kbd">↑↓←→</span> veya <span class="kbd">KAYDIR</span> ile oyna!
                         </div>
                     </div>
                 </div>
@@ -164,6 +164,7 @@ const GameCanvas = ({ gameState, stage, score, onGameOver, onStageComplete }) =>
     const requestRef = useRef();
     const scoreRef = useRef(0);
     const frogRef = useRef({ x: WIDTH / 2 - 15, y: HEIGHT - GRID_SIZE + 10 });
+    const touchStartRef = useRef(null);
 
     useEffect(() => {
         spriteRef.current.src = 'pixel_frog_jumping_16x16.gif';
@@ -238,10 +239,48 @@ const GameCanvas = ({ gameState, stage, score, onGameOver, onStageComplete }) =>
         });
     }, [gameState, onStageComplete]);
 
+    const handleTouchStart = useCallback((e) => {
+        touchStartRef.current = {
+            x: e.touches[0].clientX,
+            y: e.touches[0].clientY
+        };
+    }, []);
+
+    const handleTouchEnd = useCallback((e) => {
+        if (!touchStartRef.current || gameState !== 'PLAYING') return;
+
+        const deltaX = e.changedTouches[0].clientX - touchStartRef.current.x;
+        const deltaY = e.changedTouches[0].clientY - touchStartRef.current.y;
+        const absX = Math.abs(deltaX);
+        const absY = Math.abs(deltaY);
+
+        if (Math.max(absX, absY) > 30) { // Threshold for swipe
+            let direction = '';
+            if (absX > absY) {
+                direction = deltaX > 0 ? 'ArrowRight' : 'ArrowLeft';
+            } else {
+                direction = deltaY > 0 ? 'ArrowDown' : 'ArrowUp';
+            }
+            handleKeyDown({ key: direction, preventDefault: () => { } });
+        }
+        touchStartRef.current = null;
+    }, [gameState, handleKeyDown]);
+
     useEffect(() => {
         window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [handleKeyDown]);
+        const canvas = canvasRef.current;
+        if (canvas) {
+            canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+            canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+        }
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            if (canvas) {
+                canvas.removeEventListener('touchstart', handleTouchStart);
+                canvas.removeEventListener('touchend', handleTouchEnd);
+            }
+        };
+    }, [handleKeyDown, handleTouchStart, handleTouchEnd]);
 
     const animate = useCallback(() => {
         const canvas = canvasRef.current;

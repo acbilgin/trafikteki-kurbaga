@@ -27,13 +27,16 @@ body {
     align-items: center;
     min-height: 100vh;
     overflow: hidden;
+    touch-action: none;
+    /* Prevent default touch actions like pull-to-refresh */
 }
 
 #game-container {
     position: relative;
-    width: 600px;
-    height: 600px;
-    /* Shorter for 3-4 lanes stage system */
+    width: 95vw;
+    max-width: 600px;
+    height: 95vw;
+    max-height: 600px;
     background: var(--bg-color);
     border-radius: 20px;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--border-color);
