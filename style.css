@@ -33,9 +33,9 @@ body {
 
 #game-container {
     position: relative;
-    width: 95vw;
+    width: 98vmin;
+    height: 98vmin;
     max-width: 600px;
-    height: 95vw;
     max-height: 600px;
     background: var(--bg-color);
     border-radius: 20px;
