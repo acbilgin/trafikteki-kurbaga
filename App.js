@@ -240,26 +240,33 @@ const GameCanvas = ({ gameState, stage, score, onGameOver, onStageComplete }) =>
     }, [gameState, onStageComplete]);
 
     const handleTouchStart = useCallback((e) => {
+        if (gameState !== 'PLAYING') return;
+        e.preventDefault();
         touchStartRef.current = {
             x: e.touches[0].clientX,
             y: e.touches[0].clientY
         };
-    }, []);
+    }, [gameState]);
+
+    const handleTouchMove = useCallback((e) => {
+        if (gameState === 'PLAYING') e.preventDefault();
+    }, [gameState]);
 
     const handleTouchEnd = useCallback((e) => {
         if (!touchStartRef.current || gameState !== 'PLAYING') return;
+        e.preventDefault();
 
         const deltaX = e.changedTouches[0].clientX - touchStartRef.current.x;
         const deltaY = e.changedTouches[0].clientY - touchStartRef.current.y;
         const absX = Math.abs(deltaX);
         const absY = Math.abs(deltaY);
 
-        if (Math.max(absX, absY) > 30) { // Threshold for swipe
+        if (Math.max(absX, absY) > 20) { // Slightly lower threshold for easier mobile play
             let direction = '';
             if (absX > absY) {
-                direction = deltaX > 0 ? 'ArrowRight' : 'ArrowLeft';
+                direction = deltaX > 0 ? 'arrowright' : 'arrowleft';
             } else {
-                direction = deltaY > 0 ? 'ArrowDown' : 'ArrowUp';
+                direction = deltaY > 0 ? 'arrowdown' : 'arrowup';
             }
             handleKeyDown({ key: direction, preventDefault: () => { } });
         }
@@ -271,16 +278,18 @@ const GameCanvas = ({ gameState, stage, score, onGameOver, onStageComplete }) =>
         const canvas = canvasRef.current;
         if (canvas) {
             canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+            canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
             canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
         }
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
             if (canvas) {
                 canvas.removeEventListener('touchstart', handleTouchStart);
+                canvas.removeEventListener('touchmove', handleTouchMove);
                 canvas.removeEventListener('touchend', handleTouchEnd);
             }
         };
-    }, [handleKeyDown, handleTouchStart, handleTouchEnd]);
+    }, [handleKeyDown, handleTouchStart, handleTouchMove, handleTouchEnd]);
 
     const animate = useCallback(() => {
         const canvas = canvasRef.current;
